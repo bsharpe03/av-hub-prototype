@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50;
+    color: #020211;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply text-white px-4 py-2 rounded-md transition-colors font-medium text-sm;
+    background-color: #004F98;
+  }
+  .btn-primary:hover {
+    background-color: #003a70;
+  }
+  .btn-secondary {
+    @apply bg-white border px-4 py-2 rounded-md transition-colors font-medium text-sm;
+    color: #004F98;
+    border-color: #004F98;
+  }
+  .btn-secondary:hover {
+    background-color: #e6f0fa;
+  }
+  .btn-accent {
+    @apply text-white px-4 py-2 rounded-md transition-colors font-medium text-sm;
+    background-color: #659637;
+  }
+  .btn-accent:hover {
+    background-color: #52792d;
+  }
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  /* Green badges: enacted, active, open */
+  .badge-enacted {
+    background-color: #659637;
+    color: #ffffff;
+  }
+  .badge-active {
+    background-color: #659637;
+    color: #ffffff;
+  }
+  .badge-open {
+    background-color: #659637;
+    color: #ffffff;
+  }
+  /* Gold badges: pending, upcoming */
+  .badge-pending {
+    background-color: #F4AB00;
+    color: #020211;
+  }
+  .badge-upcoming {
+    background-color: #F4AB00;
+    color: #020211;
+  }
+  /* Red badges: closed, paused, expired */
+  .badge-closed {
+    background-color: #DD2323;
+    color: #ffffff;
+  }
+  .badge-paused {
+    background-color: #DD2323;
+    color: #ffffff;
+  }
+  /* Blue badges: proposed, testing */
+  .badge-proposed {
+    background-color: #C1DEE9;
+    color: #004F98;
+  }
+  .badge-testing {
+    background-color: #C1DEE9;
+    color: #004F98;
+  }
+  .badge-completed {
+    @apply bg-gray-200 text-gray-700;
+  }
+  .page-header {
+    @apply text-2xl font-bold mb-1;
+    color: #004F98;
+  }
+  .page-subtitle {
+    @apply text-gray-500 mb-6;
+  }
+  .input-field {
+    @apply block w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none;
+  }
+  .input-field:focus {
+    border-color: #004F98;
+    box-shadow: 0 0 0 1px #004F98;
+  }
+  .select-field {
+    @apply block w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white outline-none;
+  }
+  .select-field:focus {
+    border-color: #004F98;
+    box-shadow: 0 0 0 1px #004F98;
+  }
+  .label-field {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}
+
+/* Leaflet overrides for consistent look */
+.leaflet-container {
+  font-family: inherit;
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}

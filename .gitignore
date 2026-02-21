@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.env
+
+# Database
+*.db
+
+# Node
+node_modules/
+dist/
+
+# Backend static (built frontend copy)
+backend/static/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots (keep final only in repo)
+screenshots/*.png
