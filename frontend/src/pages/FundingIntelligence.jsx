@@ -10,6 +10,33 @@ const AGENCIES = ['All', 'USDOT', 'FTA', 'FHWA', 'NHTSA', 'NSF', 'State Programs
 const STATUSES = ['All', 'Open', 'Closed', 'Upcoming'];
 const FUNDING_TYPES = ['All', 'Grant', 'Loan', 'Tax Credit'];
 
+function formatBillions(value) {
+  if (value == null || typeof value !== 'number') return '--';
+  if (value >= 1e9) {
+    return '$' + (value / 1e9).toFixed(1) + 'B';
+  }
+  if (value >= 1e6) {
+    return '$' + (value / 1e6).toFixed(1) + 'M';
+  }
+  return '$' + value.toLocaleString();
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function truncateText(text, maxWords = 15) {
+  if (!text) return '\u2014';
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '...';
+}
+
 export default function FundingIntelligence() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,9 +142,7 @@ export default function FundingIntelligence() {
       render: (value) =>
         value != null ? (
           <span className="font-medium text-gray-900">
-            {typeof value === 'number'
-              ? `$${value.toLocaleString()}`
-              : value}
+            {formatBillions(typeof value === 'number' ? value : parseFloat(value))}
           </span>
         ) : (
           <span className="text-gray-400">--</span>
@@ -129,6 +154,44 @@ export default function FundingIntelligence() {
       sortable: false,
     },
     {
+      key: 'date_enacted',
+      header: 'Date Enacted',
+      sortable: true,
+      render: (value) =>
+        value ? (
+          <span className="flex items-center gap-1 text-sm">
+            <Calendar className="h-3.5 w-3.5 text-gray-400" />
+            {formatDate(value)}
+          </span>
+        ) : (
+          <span className="text-gray-400">--</span>
+        ),
+    },
+    {
+      key: 'date_closed',
+      header: 'Date Closed',
+      sortable: true,
+      render: (value) =>
+        value ? (
+          <span className="flex items-center gap-1 text-sm">
+            <Calendar className="h-3.5 w-3.5 text-gray-400" />
+            {formatDate(value)}
+          </span>
+        ) : (
+          <span className="text-gray-400">--</span>
+        ),
+    },
+    {
+      key: 'description',
+      header: 'Description',
+      sortable: false,
+      render: (value) => (
+        <span title={value || ''} className="text-gray-600">
+          {truncateText(value)}
+        </span>
+      ),
+    },
+    {
       key: 'application_deadline',
       header: 'Deadline',
       sortable: true,
@@ -136,11 +199,7 @@ export default function FundingIntelligence() {
         value ? (
           <span className="flex items-center gap-1 text-sm">
             <Calendar className="h-3.5 w-3.5 text-gray-400" />
-            {new Date(value).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })}
+            {formatDate(value)}
           </span>
         ) : (
           <span className="text-gray-400">--</span>

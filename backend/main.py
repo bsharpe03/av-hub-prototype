@@ -1,5 +1,7 @@
 import io
+import os
 import csv
+import re
 import pathlib
 from datetime import datetime
 from typing import Optional
@@ -19,6 +21,7 @@ from models import (
     SafetyIncident,
     Resource,
     CurbsideRegulation,
+    NewsArticle,
 )
 from schemas import (
     PolicyCreate,
@@ -33,6 +36,8 @@ from schemas import (
     ResourceOut,
     CurbsideRegulationCreate,
     CurbsideRegulationOut,
+    NewsArticleCreate,
+    NewsArticleOut,
     DashboardSummary,
 )
 from auth import verify_admin
@@ -57,6 +62,11 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 @app.on_event("startup")
 def on_startup():
+    # Delete old database so the new schema applies cleanly
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "av_hub.db")
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -105,6 +115,17 @@ def _model_to_dict(obj) -> dict:
     return d
 
 
+def _parse_funding_amount(amount_str: str) -> float:
+    """Parse a funding amount string like '$100,000,000' into a float."""
+    if not amount_str:
+        return 0.0
+    cleaned = re.sub(r"[^\d.]", "", amount_str)
+    try:
+        return float(cleaned)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 # ===================================================================
 #  DASHBOARD
 # ===================================================================
@@ -116,16 +137,28 @@ def get_dashboard(db: Session = Depends(get_db)):
     total_safety_incidents = db.query(SafetyIncident).count()
     total_resources = db.query(Resource).count()
     total_curbside_regulations = db.query(CurbsideRegulation).count()
+    total_news_articles = db.query(NewsArticle).count()
 
     states_with_legislation = (
         db.query(Policy.state_code).distinct().count()
     )
 
+    # Calculate total funding amount from all funding programs
+    funding_programs = db.query(FundingProgram.total_funding).all()
+    total_funding_amount = sum(
+        _parse_funding_amount(fp.total_funding)
+        for fp in funding_programs
+        if fp.total_funding
+    )
+
     recent_policies = (
         db.query(Policy).order_by(Policy.id.desc()).limit(5).all()
     )
-    recent_incidents = (
-        db.query(SafetyIncident).order_by(SafetyIncident.id.desc()).limit(5).all()
+    recent_news = (
+        db.query(NewsArticle)
+        .order_by(NewsArticle.publication_date.desc())
+        .limit(6)
+        .all()
     )
 
     return DashboardSummary(
@@ -135,9 +168,11 @@ def get_dashboard(db: Session = Depends(get_db)):
         total_safety_incidents=total_safety_incidents,
         total_resources=total_resources,
         total_curbside_regulations=total_curbside_regulations,
+        total_news_articles=total_news_articles,
         states_with_legislation=states_with_legislation,
+        total_funding_amount=total_funding_amount,
         recent_policies=recent_policies,
-        recent_incidents=recent_incidents,
+        recent_news=recent_news,
     )
 
 
@@ -195,18 +230,29 @@ def policies_map_states(db: Session = Depends(get_db)):
     out = []
     for state_code, count in results:
         # Grab the most common status for this state
-        top_status = (
+        top_status_row = (
             db.query(Policy.status)
             .filter(Policy.state_code == state_code)
             .group_by(Policy.status)
             .order_by(func.count(Policy.id).desc())
             .first()
         )
+        top_status = top_status_row[0] if top_status_row else None
+
+        # Determine policy_status for map coloring
+        if top_status and top_status.lower() in ("enacted", "active", "signed"):
+            policy_status = "active"
+        elif top_status and top_status.lower() in ("pending", "proposed", "introduced"):
+            policy_status = "under_consideration"
+        else:
+            policy_status = "none"
+
         out.append(
             {
                 "state_code": state_code,
                 "count": count,
-                "status": top_status[0] if top_status else None,
+                "status": top_status,
+                "policy_status": policy_status,
             }
         )
     return out
@@ -423,7 +469,7 @@ def _filter_funding(
     if search:
         q = q.filter(
             or_(
-                FundingProgram.title.ilike(f"%{search}%"),
+                FundingProgram.program_name.ilike(f"%{search}%"),
                 FundingProgram.agency.ilike(f"%{search}%"),
                 FundingProgram.description.ilike(f"%{search}%"),
             )
@@ -604,6 +650,25 @@ def safety_stats_by_severity(db: Session = Depends(get_db)):
         .all()
     )
     return [{"severity": r[0], "count": r[1]} for r in results]
+
+
+@app.get("/api/safety/map/locations")
+def safety_map_locations(db: Session = Depends(get_db)):
+    items = db.query(SafetyIncident).all()
+    return [
+        {
+            "id": i.id,
+            "operator": i.manufacturer,
+            "city": i.city,
+            "state": i.state,
+            "latitude": i.latitude,
+            "longitude": i.longitude,
+            "incident_type": i.incident_type,
+            "date": i.date.isoformat() if i.date else None,
+        }
+        for i in items
+        if i.latitude and i.longitude
+    ]
 
 
 @app.get("/api/safety", response_model=list[SafetyIncidentOut])
@@ -815,6 +880,24 @@ def export_curbside_csv(
     return _rows_to_csv(rows, "curbside_regulations.csv")
 
 
+@app.get("/api/curbside/map/locations")
+def curbside_map_locations(db: Session = Depends(get_db)):
+    items = db.query(CurbsideRegulation).all()
+    return [
+        {
+            "id": r.id,
+            "city": r.city,
+            "state": r.state,
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "regulation_type": r.regulation_type,
+            "status": r.status,
+        }
+        for r in items
+        if r.latitude and r.longitude
+    ]
+
+
 @app.get("/api/curbside", response_model=list[CurbsideRegulationOut])
 def list_curbside(
     status: Optional[str] = None,
@@ -874,6 +957,99 @@ def delete_curbside(
     item = db.query(CurbsideRegulation).filter(CurbsideRegulation.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Curbside regulation not found")
+    db.delete(item)
+    db.commit()
+    return {"detail": "Deleted"}
+
+
+# ===================================================================
+#  NEWS ARTICLES
+# ===================================================================
+def _filter_news(
+    db: Session,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+):
+    q = db.query(NewsArticle).order_by(NewsArticle.publication_date.desc())
+    if category:
+        q = q.filter(NewsArticle.category == category)
+    if search:
+        q = q.filter(
+            or_(
+                NewsArticle.headline.ilike(f"%{search}%"),
+                NewsArticle.summary.ilike(f"%{search}%"),
+            )
+        )
+    return q
+
+
+@app.get("/api/news/export/csv")
+def export_news_csv(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    items = _filter_news(db, category, search).all()
+    rows = [_model_to_dict(i) for i in items]
+    return _rows_to_csv(rows, "news_articles.csv")
+
+
+@app.get("/api/news", response_model=list[NewsArticleOut])
+def list_news(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    return _filter_news(db, category, search).all()
+
+
+@app.get("/api/news/{id}", response_model=NewsArticleOut)
+def get_news(id: int, db: Session = Depends(get_db)):
+    item = db.query(NewsArticle).filter(NewsArticle.id == id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="News article not found")
+    return item
+
+
+@app.post("/api/admin/news", response_model=NewsArticleOut)
+def create_news(
+    data: NewsArticleCreate,
+    db: Session = Depends(get_db),
+    _admin=Depends(verify_admin),
+):
+    item = NewsArticle(**data.dict())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.put("/api/admin/news/{id}", response_model=NewsArticleOut)
+def update_news(
+    id: int,
+    data: NewsArticleCreate,
+    db: Session = Depends(get_db),
+    _admin=Depends(verify_admin),
+):
+    item = db.query(NewsArticle).filter(NewsArticle.id == id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="News article not found")
+    for key, value in data.dict().items():
+        setattr(item, key, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@app.delete("/api/admin/news/{id}")
+def delete_news(
+    id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(verify_admin),
+):
+    item = db.query(NewsArticle).filter(NewsArticle.id == id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="News article not found")
     db.delete(item)
     db.commit()
     return {"detail": "Deleted"}

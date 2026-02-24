@@ -59,6 +59,7 @@ export const fetchSafetyStatsByManufacturer = () => request('/safety/stats/by-ma
 export const fetchSafetyStatsByType = () => request('/safety/stats/by-type');
 export const fetchSafetyStatsByYear = () => request('/safety/stats/by-year');
 export const fetchSafetyStatsBySeverity = () => request('/safety/stats/by-severity');
+export const fetchSafetyMapLocations = () => request('/safety/map/locations');
 export const createSafety = (data, auth) =>
   request('/admin/safety', { method: 'POST', body: JSON.stringify(data), headers: authHeaders(auth.u, auth.p) });
 export const updateSafety = (id, data, auth) =>
@@ -79,12 +80,17 @@ export const deleteResource = (id, auth) =>
 // Curbside
 export const fetchCurbside = (params) => request('/curbside' + toQuery(params));
 export const fetchCurbsideRegulation = (id) => request(`/curbside/${id}`);
+export const fetchCurbsideMapLocations = () => request('/curbside/map/locations');
 export const createCurbside = (data, auth) =>
   request('/admin/curbside', { method: 'POST', body: JSON.stringify(data), headers: authHeaders(auth.u, auth.p) });
 export const updateCurbside = (id, data, auth) =>
   request(`/admin/curbside/${id}`, { method: 'PUT', body: JSON.stringify(data), headers: authHeaders(auth.u, auth.p) });
 export const deleteCurbside = (id, auth) =>
   request(`/admin/curbside/${id}`, { method: 'DELETE', headers: authHeaders(auth.u, auth.p) });
+
+// News
+export const fetchNews = (params) => request('/news' + toQuery(params));
+export const fetchNewsArticle = (id) => request(`/news/${id}`);
 
 // CSV export (returns download URL)
 export function getExportUrl(resource, params) {

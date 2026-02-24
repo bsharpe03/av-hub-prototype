@@ -67,6 +67,8 @@ class FundingProgramBase(BaseModel):
     total_funding: Optional[str] = None
     award_range: Optional[str] = None
     application_deadline: Optional[date] = None
+    date_enacted: Optional[date] = None
+    date_closed: Optional[date] = None
     eligibility: Optional[str] = None
     description: Optional[str] = None
     av_relevance: Optional[str] = None
@@ -96,6 +98,8 @@ class SafetyIncidentBase(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     state_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     incident_type: str
     severity: Optional[str] = None
     ads_engaged: Optional[bool] = None
@@ -170,6 +174,29 @@ class CurbsideRegulationOut(CurbsideRegulationBase):
         from_attributes = True
 
 
+# --- News Article ---
+class NewsArticleBase(BaseModel):
+    headline: str
+    source_org: str
+    publication_date: date
+    summary: Optional[str] = None
+    url: Optional[str] = None
+    category: Optional[str] = None
+
+
+class NewsArticleCreate(NewsArticleBase):
+    pass
+
+
+class NewsArticleOut(NewsArticleBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # --- Dashboard Summary ---
 class DashboardSummary(BaseModel):
     total_policies: int
@@ -178,6 +205,8 @@ class DashboardSummary(BaseModel):
     total_safety_incidents: int
     total_resources: int
     total_curbside_regulations: int
+    total_news_articles: int
     states_with_legislation: int
+    total_funding_amount: float
     recent_policies: list[PolicyOut]
-    recent_incidents: list[SafetyIncidentOut]
+    recent_news: list[NewsArticleOut]

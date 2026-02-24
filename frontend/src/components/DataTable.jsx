@@ -5,7 +5,7 @@ export default function DataTable({ columns, data, onRowClick }) {
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
   const [page, setPage] = useState(0)
-  const pageSize = 15
+  const pageSize = 10
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -46,7 +46,7 @@ export default function DataTable({ columns, data, onRowClick }) {
                   }`}
                 >
                   <div className="flex items-center gap-1">
-                    {col.label}
+                    {col.label || col.header}
                     {col.sortable !== false && (
                       sortKey === col.key ? (
                         sortDir === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
@@ -75,7 +75,7 @@ export default function DataTable({ columns, data, onRowClick }) {
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap max-w-xs truncate">
-                      {col.render ? col.render(row[col.key], row) : row[col.key] ?? '—'}
+                      {col.render ? col.render(row[col.key], row) : row[col.key] ?? '\u2014'}
                     </td>
                   ))}
                 </tr>
@@ -88,7 +88,7 @@ export default function DataTable({ columns, data, onRowClick }) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <span className="text-sm text-gray-600">
-            Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
+            Showing {page * pageSize + 1}\u2013{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
           </span>
           <div className="flex gap-2">
             <button

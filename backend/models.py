@@ -9,11 +9,11 @@ class Policy(Base):
     id = Column(Integer, primary_key=True, index=True)
     jurisdiction = Column(String(100), nullable=False, index=True)
     state_code = Column(String(2), index=True)
-    policy_type = Column(String(50), nullable=False, index=True)  # legislation/regulation/executive_order
+    policy_type = Column(String(50), nullable=False, index=True)
     title = Column(String(500), nullable=False)
     vehicle_class = Column(String(200))
     date_enacted = Column(Date)
-    status = Column(String(50), index=True)  # enacted/pending/proposed/expired
+    status = Column(String(50), index=True)
     summary = Column(Text)
     source_url = Column(String(1000))
     created_at = Column(DateTime, server_default=func.now())
@@ -31,9 +31,9 @@ class Deployment(Base):
     state_code = Column(String(2))
     latitude = Column(Float)
     longitude = Column(Float)
-    vehicle_type = Column(String(100))  # passenger/freight/shuttle/delivery
-    operational_domain = Column(String(200))  # urban/suburban/highway/mixed
-    status = Column(String(50), index=True)  # active/paused/completed/testing
+    vehicle_type = Column(String(100))
+    operational_domain = Column(String(200))
+    status = Column(String(50), index=True)
     start_date = Column(Date)
     description = Column(Text)
     source_url = Column(String(1000))
@@ -47,14 +47,16 @@ class FundingProgram(Base):
     id = Column(Integer, primary_key=True, index=True)
     program_name = Column(String(500), nullable=False)
     agency = Column(String(200), nullable=False, index=True)
-    funding_type = Column(String(100))  # grant/loan/tax_credit
+    funding_type = Column(String(100))
     total_funding = Column(String(200))
     award_range = Column(String(200))
     application_deadline = Column(Date)
+    date_enacted = Column(Date)
+    date_closed = Column(Date)
     eligibility = Column(Text)
     description = Column(Text)
     av_relevance = Column(Text)
-    status = Column(String(50), index=True)  # open/closed/upcoming
+    status = Column(String(50), index=True)
     source_url = Column(String(1000))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -71,11 +73,13 @@ class SafetyIncident(Base):
     city = Column(String(200))
     state = Column(String(100), index=True)
     state_code = Column(String(2))
-    incident_type = Column(String(100))  # crash/near_miss/disengagement/other
-    severity = Column(String(50))  # fatal/injury/property_damage/no_injury
+    latitude = Column(Float)
+    longitude = Column(Float)
+    incident_type = Column(String(100))
+    severity = Column(String(50))
     ads_engaged = Column(Boolean)
     description = Column(Text)
-    source = Column(String(200))  # NHTSA_SGO/state_report/company_report
+    source = Column(String(200))
     source_url = Column(String(1000))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -87,10 +91,10 @@ class Resource(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(500), nullable=False)
     author_org = Column(String(300), nullable=False, index=True)
-    resource_type = Column(String(100), index=True)  # report/white_paper/policy_analysis/guidance/toolkit
+    resource_type = Column(String(100), index=True)
     publication_date = Column(Date)
-    tags = Column(String(500))  # comma-separated
-    topic_area = Column(String(200), index=True)  # policy/safety/technology/equity/infrastructure
+    tags = Column(String(500))
+    topic_area = Column(String(200), index=True)
     summary = Column(Text)
     url = Column(String(1000))
     created_at = Column(DateTime, server_default=func.now())
@@ -106,11 +110,25 @@ class CurbsideRegulation(Base):
     state_code = Column(String(2))
     latitude = Column(Float)
     longitude = Column(Float)
-    regulation_type = Column(String(200))  # pickup_dropoff_zone/loading_zone/geofenced_area/pilot_program
+    regulation_type = Column(String(200))
     description = Column(Text)
-    applies_to = Column(String(200))  # av_only/tnc_and_av/all_vehicles
+    applies_to = Column(String(200))
     date_adopted = Column(Date)
-    status = Column(String(50), index=True)  # active/proposed/pilot/expired
+    status = Column(String(50), index=True)
     source_url = Column(String(1000))
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class NewsArticle(Base):
+    __tablename__ = "news_articles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    headline = Column(String(500), nullable=False)
+    source_org = Column(String(300), nullable=False)
+    publication_date = Column(Date, nullable=False, index=True)
+    summary = Column(Text)
+    url = Column(String(1000))
+    category = Column(String(100), index=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

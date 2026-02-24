@@ -59,13 +59,19 @@ export function PointMap({ locations, height = '400px', zoom = 4, center = [39.8
   )
 }
 
-// State choropleth colors
-function getStateColor(count) {
-  if (!count || count === 0) return '#f3f4f6'
-  if (count === 1) return '#C1DEE9'   // Atlas light blue
-  if (count === 2) return '#6aadd0'
-  if (count <= 4) return '#3388bf'
-  return '#004F98'                      // Atlas primary blue
+// Policy status colors for choropleth-style display
+const POLICY_STATUS_COLORS = {
+  enacted: '#C1DEA6',    // Light green - active regulations
+  active: '#C1DEA6',
+  pending: '#FFDF95',    // Light yellow - under consideration
+  proposed: '#FFDF95',
+  none: '#f3f4f6',       // Light gray - no policy
+}
+
+function getPolicyStatusColor(status) {
+  if (!status) return POLICY_STATUS_COLORS.none
+  const lower = status.toLowerCase()
+  return POLICY_STATUS_COLORS[lower] || POLICY_STATUS_COLORS.none
 }
 
 export function StateMap({ stateData, height = '400px' }) {
@@ -105,21 +111,25 @@ export function StateMap({ stateData, height = '400px' }) {
       {Object.entries(stateCenters).map(([code, coords]) => {
         const data = stateMap[code]
         const count = data?.count || data?.policy_count || 0
+        const status = data?.status || null
+        const fillColor = count > 0 ? getPolicyStatusColor(status) : POLICY_STATUS_COLORS.none
+        const borderColor = count > 0 ? '#888' : '#d1d5db'
         return (
           <CircleMarker
             key={code}
             center={coords}
-            radius={count > 0 ? 10 + count * 2 : 6}
-            fillColor={getStateColor(count)}
-            color={count > 0 ? '#004F98' : '#d1d5db'}
+            radius={13}
+            fillColor={fillColor}
+            color={borderColor}
             weight={1.5}
             opacity={1}
-            fillOpacity={0.7}
+            fillOpacity={0.85}
           >
             <Popup>
               <div className="text-sm">
                 <strong>{code}</strong>
                 <div>{count} {count === 1 ? 'policy' : 'policies'}</div>
+                {status && <div className="text-gray-600 capitalize">{status}</div>}
                 {data?.statuses && <div className="text-gray-600">{data.statuses}</div>}
               </div>
             </Popup>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Truck, MapPin, Activity } from "lucide-react";
+import { Truck, MapPin, Activity, ExternalLink } from "lucide-react";
 import { fetchDeployments, fetchDeploymentMapLocations } from "../api";
 import { PointMap } from "../components/MapView";
 import DataTable from "../components/DataTable";
@@ -9,7 +9,6 @@ import StatusBadge from "../components/StatusBadge";
 
 const STATUS_OPTIONS = ["All", "Active", "Testing", "Paused", "Completed"];
 const VEHICLE_TYPE_OPTIONS = ["All", "Passenger", "Freight", "Shuttle", "Delivery"];
-const OPERATIONAL_DOMAIN_OPTIONS = ["All", "Urban", "Suburban", "Highway", "Mixed"];
 
 const STATUS_COLORS = {
   Active: "#659637",   // Atlas green
@@ -18,19 +17,63 @@ const STATUS_COLORS = {
   Completed: "#6b7280",
 };
 
+function capitalize(str) {
+  if (!str) return '\u2014';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function truncateText(text, wordCount = 20) {
+  if (!text) return '\u2014';
+  const words = text.split(/\s+/);
+  if (words.length <= wordCount) return text;
+  return words.slice(0, wordCount).join(' ') + '...';
+}
+
 const columns = [
   { key: "operator", header: "Operator" },
   { key: "program_name", header: "Program Name" },
   { key: "city", header: "City" },
   { key: "state", header: "State" },
-  { key: "vehicle_type", header: "Vehicle Type" },
-  { key: "operational_domain", header: "Operational Domain" },
+  {
+    key: "vehicle_type",
+    header: "Vehicle Type",
+    render: (value) => value ? capitalize(value) : '\u2014',
+  },
+  {
+    key: "description",
+    header: "Description",
+    sortable: false,
+    render: (value) => (
+      <span title={value || ''} className="text-gray-600">
+        {truncateText(value, 15)}
+      </span>
+    ),
+  },
   {
     key: "status",
     header: "Status",
     render: (value) => <StatusBadge status={value} />,
   },
   { key: "start_date", header: "Start Date" },
+  {
+    key: "source_url",
+    header: "Source",
+    sortable: false,
+    render: (value) =>
+      value ? (
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="h-3.5 w-3.5" /> Link
+        </a>
+      ) : (
+        '\u2014'
+      ),
+  },
 ];
 
 export default function DeploymentDashboard() {
@@ -42,7 +85,6 @@ export default function DeploymentDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState("All");
-  const [operationalDomainFilter, setOperationalDomainFilter] = useState("All");
 
   // Build query params from current filter state
   const filterParams = useMemo(() => {
@@ -56,11 +98,8 @@ export default function DeploymentDashboard() {
     if (vehicleTypeFilter !== "All") {
       params.vehicle_type = vehicleTypeFilter;
     }
-    if (operationalDomainFilter !== "All") {
-      params.operational_domain = operationalDomainFilter;
-    }
     return params;
-  }, [search, statusFilter, vehicleTypeFilter, operationalDomainFilter]);
+  }, [search, statusFilter, vehicleTypeFilter]);
 
   // Fetch deployments whenever filters change
   useEffect(() => {
@@ -133,7 +172,7 @@ export default function DeploymentDashboard() {
       <div>
         <h1 className="page-header">AV Deployment Dashboard</h1>
         <p className="page-subtitle">
-          Commercial AV operations and testing programs across the United States
+          AV operations and testing programs across the United States
         </p>
       </div>
 
@@ -144,13 +183,35 @@ export default function DeploymentDashboard() {
             Loading map data...
           </div>
         ) : (
-          <PointMap locations={mapMarkers} />
+          <>
+            <PointMap locations={mapMarkers} />
+            {/* Map Legend */}
+            <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+              <span className="font-semibold">Legend:</span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#659637' }} />
+                Active
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#004F98' }} />
+                Testing
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#DD2323' }} />
+                Paused
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
+                Completed
+              </span>
+            </div>
+          </>
         )}
       </div>
 
       {/* Filter Bar */}
       <div className="card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label
               htmlFor="search"
@@ -203,27 +264,6 @@ export default function DeploymentDashboard() {
               onChange={(e) => setVehicleTypeFilter(e.target.value)}
             >
               {VEHICLE_TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="domain-filter"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Operational Domain
-            </label>
-            <select
-              id="domain-filter"
-              className="select-field"
-              value={operationalDomainFilter}
-              onChange={(e) => setOperationalDomainFilter(e.target.value)}
-            >
-              {OPERATIONAL_DOMAIN_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

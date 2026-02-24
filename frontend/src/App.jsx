@@ -7,7 +7,7 @@ import DeploymentDashboard from './pages/DeploymentDashboard'
 import FundingIntelligence from './pages/FundingIntelligence'
 import SafetyAnalytics from './pages/SafetyAnalytics'
 import ResourceLibrary from './pages/ResourceLibrary'
-import CurbsideManagement from './pages/CurbsideManagement'
+import News from './pages/News'
 import Admin from './pages/Admin'
 
 export default function App() {
@@ -22,7 +22,7 @@ export default function App() {
           <Route path="/funding" element={<FundingIntelligence />} />
           <Route path="/safety" element={<SafetyAnalytics />} />
           <Route path="/resources" element={<ResourceLibrary />} />
-          <Route path="/curbside" element={<CurbsideManagement />} />
+          <Route path="/news" element={<News />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
       </main>

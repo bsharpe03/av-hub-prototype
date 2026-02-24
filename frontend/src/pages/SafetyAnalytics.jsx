@@ -1,64 +1,81 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShieldAlert, BarChart3, TrendingUp } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LineChart,
-  Line,
-} from 'recharts';
+import { ShieldAlert, ExternalLink } from 'lucide-react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   fetchSafety,
   fetchSafetyStatsByManufacturer,
-  fetchSafetyStatsByType,
-  fetchSafetyStatsByYear,
-  fetchSafetyStatsBySeverity,
+  fetchSafetyMapLocations,
 } from '../api';
 import DataTable from '../components/DataTable';
 import ExportButton from '../components/ExportButton';
 import LastUpdated from '../components/LastUpdated';
 import StatusBadge from '../components/StatusBadge';
 
-// Atlas Public Policy palette (max 5 for pie/donut charts)
-const PIE_COLORS = ['#004F98', '#659637', '#F4AB00', '#DD2323', '#F6571D'];
-// Single color for all single-series bar charts
-const BAR_COLOR = '#004F98';
+const INCIDENT_TYPE_COLORS = {
+  'Property Damage': '#F4AB00',
+  'property_damage': '#F4AB00',
+  'property damage': '#F4AB00',
+  'Injury': '#F6571D',
+  'injury': '#F6571D',
+  'Fatality': '#DD2323',
+  'fatality': '#DD2323',
+  'Fatal': '#DD2323',
+  'fatal': '#DD2323',
+};
 
-const INCIDENT_TYPE_OPTIONS = ['All', 'Crash', 'Near Miss', 'Disengagement', 'Other'];
-const SEVERITY_OPTIONS = ['All', 'Fatal', 'Injury', 'Property Damage', 'No Injury'];
+const INCIDENT_TYPES = ['Property Damage', 'Injury', 'Fatality'];
+
+function normalizeIncidentType(row) {
+  const severity = (row.severity || '').toLowerCase();
+  const type = (row.incident_type || '').toLowerCase();
+
+  if (severity === 'fatal' || severity === 'fatality' || type === 'fatality' || type === 'fatal') {
+    return 'Fatality';
+  }
+  if (severity === 'injury' || type === 'injury') {
+    return 'Injury';
+  }
+  return 'Property Damage';
+}
+
+function getIncidentColor(type) {
+  return INCIDENT_TYPE_COLORS[type] || INCIDENT_TYPE_COLORS['Property Damage'];
+}
 
 const columns = [
   { key: 'report_id', label: 'Report ID' },
   { key: 'date', label: 'Date' },
-  { key: 'manufacturer', label: 'Manufacturer' },
+  { key: 'manufacturer', label: 'Operator' },
   { key: 'vehicle_model', label: 'Vehicle Model' },
   { key: 'city', label: 'City' },
   { key: 'state', label: 'State' },
-  { key: 'incident_type', label: 'Incident Type' },
   {
-    key: 'severity',
-    label: 'Severity',
-    render: (value) => <StatusBadge status={value} />,
+    key: 'incident_type',
+    label: 'Incident Type',
+    render: (value, row) => {
+      const normalized = normalizeIncidentType(row);
+      return <StatusBadge status={normalized} />;
+    },
   },
   {
-    key: 'ads_engaged',
-    label: 'ADS Engaged',
-    render: (value) => (
-      <span
-        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-          value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-        }`}
-      >
-        {value ? 'Yes' : 'No'}
-      </span>
-    ),
+    key: 'source_url',
+    label: 'Source',
+    sortable: false,
+    render: (value) =>
+      value ? (
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline text-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="h-3.5 w-3.5" /> Link
+        </a>
+      ) : (
+        '\u2014'
+      ),
   },
 ];
 
@@ -68,21 +85,27 @@ export default function SafetyAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Stats data state
+  // Map data state
+  const [mapLocations, setMapLocations] = useState([]);
+  const [mapLoading, setMapLoading] = useState(true);
+
+  // Stats for operator options
   const [statsByManufacturer, setStatsByManufacturer] = useState([]);
-  const [statsByType, setStatsByType] = useState([]);
-  const [statsByYear, setStatsByYear] = useState([]);
-  const [statsBySeverity, setStatsBySeverity] = useState([]);
-  const [statsLoading, setStatsLoading] = useState(true);
 
   // Filter state
   const [search, setSearch] = useState('');
-  const [manufacturerFilter, setManufacturerFilter] = useState('All');
+  const [operatorFilter, setOperatorFilter] = useState('All');
   const [incidentTypeFilter, setIncidentTypeFilter] = useState('All');
-  const [severityFilter, setSeverityFilter] = useState('All');
 
-  // Derive manufacturer options from stats data
-  const manufacturerOptions = useMemo(() => {
+  // Map incident type checkboxes
+  const [visibleTypes, setVisibleTypes] = useState({
+    'Property Damage': true,
+    'Injury': true,
+    'Fatality': true,
+  });
+
+  // Derive operator options from stats data
+  const operatorOptions = useMemo(() => {
     const names = statsByManufacturer.map((s) => s.manufacturer).filter(Boolean).sort();
     return ['All', ...names];
   }, [statsByManufacturer]);
@@ -91,33 +114,32 @@ export default function SafetyAnalytics() {
   const filterParams = useMemo(() => {
     const params = {};
     if (search.trim()) params.search = search.trim();
-    if (manufacturerFilter !== 'All') params.manufacturer = manufacturerFilter;
+    if (operatorFilter !== 'All') params.manufacturer = operatorFilter;
     if (incidentTypeFilter !== 'All') params.incident_type = incidentTypeFilter;
-    if (severityFilter !== 'All') params.severity = severityFilter;
     return params;
-  }, [search, manufacturerFilter, incidentTypeFilter, severityFilter]);
+  }, [search, operatorFilter, incidentTypeFilter]);
 
-  // Fetch chart stats once on mount
+  // Fetch operator stats once on mount
   useEffect(() => {
-    setStatsLoading(true);
-
-    Promise.all([
-      fetchSafetyStatsByManufacturer(),
-      fetchSafetyStatsByType(),
-      fetchSafetyStatsByYear(),
-      fetchSafetyStatsBySeverity(),
-    ])
-      .then(([byManufacturer, byType, byYear, bySeverity]) => {
-        setStatsByManufacturer(Array.isArray(byManufacturer) ? byManufacturer : []);
-        setStatsByType(Array.isArray(byType) ? byType : []);
-        setStatsByYear(Array.isArray(byYear) ? byYear : []);
-        setStatsBySeverity(Array.isArray(bySeverity) ? bySeverity : []);
+    fetchSafetyStatsByManufacturer()
+      .then((data) => {
+        setStatsByManufacturer(Array.isArray(data) ? data : []);
       })
-      .catch((err) => {
-        console.error('Failed to fetch safety stats:', err);
+      .catch(() => {});
+  }, []);
+
+  // Fetch map locations once on mount
+  useEffect(() => {
+    setMapLoading(true);
+    fetchSafetyMapLocations()
+      .then((data) => {
+        setMapLocations(Array.isArray(data) ? data : data.data || []);
+      })
+      .catch(() => {
+        setMapLocations([]);
       })
       .finally(() => {
-        setStatsLoading(false);
+        setMapLoading(false);
       });
   }, []);
 
@@ -154,11 +176,23 @@ export default function SafetyAnalytics() {
   // Summary stats derived from table data
   const summaryStats = useMemo(() => {
     const total = incidents.length;
-    const crashes = incidents.filter((i) => i.incident_type === 'Crash').length;
-    const fatalCount = incidents.filter((i) => i.severity === 'Fatal').length;
-    const adsEngagedCount = incidents.filter((i) => i.ads_engaged).length;
-    return { total, crashes, fatalCount, adsEngagedCount };
+    const fatalCount = incidents.filter((i) => normalizeIncidentType(i) === 'Fatality').length;
+    const injuryCount = incidents.filter((i) => normalizeIncidentType(i) === 'Injury').length;
+    const propDmgCount = incidents.filter((i) => normalizeIncidentType(i) === 'Property Damage').length;
+    return { total, fatalCount, injuryCount, propDmgCount };
   }, [incidents]);
+
+  // Filtered map locations based on checkbox selection
+  const filteredMapLocations = useMemo(() => {
+    return mapLocations.filter((loc) => {
+      const type = normalizeIncidentType(loc);
+      return visibleTypes[type];
+    });
+  }, [mapLocations, visibleTypes]);
+
+  function toggleType(type) {
+    setVisibleTypes((prev) => ({ ...prev, [type]: !prev[type] }));
+  }
 
   return (
     <div className="space-y-6">
@@ -166,7 +200,7 @@ export default function SafetyAnalytics() {
       <div>
         <h1 className="page-header">Safety & Performance Analytics</h1>
         <p className="page-subtitle">
-          Aggregated NHTSA SGO and AV incident report data with summary visualizations
+          Aggregated NHTSA incident report data
         </p>
       </div>
 
@@ -185,166 +219,157 @@ export default function SafetyAnalytics() {
         </div>
 
         <div className="card p-5 flex items-center gap-4">
-          <div className="flex-shrink-0 rounded-lg bg-red-50 p-3">
-            <ShieldAlert className="h-6 w-6 text-red-600" />
+          <div className="flex-shrink-0 rounded-lg p-3" style={{ backgroundColor: '#FEF3C7' }}>
+            <ShieldAlert className="h-6 w-6" style={{ color: '#F4AB00' }} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Crashes</p>
+            <p className="text-sm font-medium text-gray-500">Property Damage</p>
             <p className="text-2xl font-bold text-gray-900">
-              {loading ? '--' : summaryStats.crashes}
+              {loading ? '--' : summaryStats.propDmgCount}
             </p>
           </div>
         </div>
 
         <div className="card p-5 flex items-center gap-4">
           <div className="flex-shrink-0 rounded-lg bg-orange-50 p-3">
-            <BarChart3 className="h-6 w-6 text-orange-600" />
+            <ShieldAlert className="h-6 w-6 text-orange-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Fatal Incidents</p>
+            <p className="text-sm font-medium text-gray-500">Injury</p>
             <p className="text-2xl font-bold text-gray-900">
-              {loading ? '--' : summaryStats.fatalCount}
+              {loading ? '--' : summaryStats.injuryCount}
             </p>
           </div>
         </div>
 
         <div className="card p-5 flex items-center gap-4">
-          <div className="flex-shrink-0 rounded-lg bg-green-50 p-3">
-            <TrendingUp className="h-6 w-6 text-green-600" />
+          <div className="flex-shrink-0 rounded-lg bg-red-50 p-3">
+            <ShieldAlert className="h-6 w-6 text-red-600" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">ADS Engaged</p>
+            <p className="text-sm font-medium text-gray-500">Fatality</p>
             <p className="text-2xl font-bold text-gray-900">
-              {loading ? '--' : summaryStats.adsEngagedCount}
+              {loading ? '--' : summaryStats.fatalCount}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Charts Section - 2x2 Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Incidents by Manufacturer - Bar Chart */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} className="text-blue-600" />
-            Incidents by Manufacturer
-          </h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              Loading chart data...
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statsByManufacturer}>
-                <XAxis
-                  dataKey="manufacturer"
-                  tick={{ fontSize: 12 }}
-                  angle={-35}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" name="Incidents" fill={BAR_COLOR} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+      {/* Interactive Map */}
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <ShieldAlert size={20} className="text-blue-600" />
+          Incident Map
+        </h2>
+
+        {/* Incident type checkboxes */}
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <span className="text-sm font-medium text-gray-600">Show:</span>
+          {INCIDENT_TYPES.map((type) => (
+            <label key={type} className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={visibleTypes[type]}
+                onChange={() => toggleType(type)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span
+                className="inline-block w-3 h-3 rounded-full"
+                style={{ backgroundColor: getIncidentColor(type) }}
+              />
+              {type}
+            </label>
+          ))}
         </div>
 
-        {/* Incidents by Type - Pie Chart */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <ShieldAlert size={20} className="text-orange-600" />
-            Incidents by Type
-          </h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              Loading chart data...
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statsByType}
-                  dataKey="count"
-                  nameKey="incident_type"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ incident_type, percent }) =>
-                    `${incident_type} (${(percent * 100).toFixed(0)}%)`
-                  }
+        {mapLoading ? (
+          <div className="flex items-center justify-center h-64 text-gray-500">
+            Loading map data...
+          </div>
+        ) : (
+          <MapContainer
+            center={[39.8, -98.5]}
+            zoom={4}
+            style={{ height: '420px', width: '100%' }}
+            className="rounded-lg border border-gray-200"
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {filteredMapLocations.map((loc, i) => {
+              if (!loc.latitude || !loc.longitude) return null;
+              const type = normalizeIncidentType(loc);
+              return (
+                <CircleMarker
+                  key={`inc-${i}`}
+                  center={[loc.latitude, loc.longitude]}
+                  radius={7}
+                  fillColor={getIncidentColor(type)}
+                  color="#fff"
+                  weight={2}
+                  opacity={1}
+                  fillOpacity={0.8}
                 >
-                  {statsByType.map((_, index) => (
-                    <Cell
-                      key={`type-${index}`}
-                      fill={PIE_COLORS[index % PIE_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+                  <Popup>
+                    <div className="text-sm">
+                      <strong>{loc.manufacturer || loc.operator}</strong>
+                      {loc.city && loc.state && <div>{loc.city}, {loc.state}</div>}
+                      <div className="mt-1">{type}</div>
+                      {loc.date && (
+                        <div className="text-gray-500">
+                          {new Date(loc.date).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
+          </MapContainer>
+        )}
 
-        {/* Incidents by Year - Line Chart */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={20} className="text-green-600" />
-            Incidents by Year
-          </h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              Loading chart data...
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={statsByYear}>
-                <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  name="Incidents"
-                  stroke="#004F98"
-                  strokeWidth={2}
-                  dot={{ fill: '#004F98', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
+        {/* Legend */}
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+          <span className="font-semibold">Legend:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#F4AB00' }} />
+            Property Damage
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#F6571D' }} />
+            Injury
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-3.5 rounded-full" style={{ backgroundColor: '#DD2323' }} />
+            Fatality
+          </span>
         </div>
+      </div>
 
-        {/* Incidents by Severity - Bar Chart */}
-        <div className="card p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} className="text-red-600" />
-            Incidents by Severity
-          </h2>
-          {statsLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-500">
-              Loading chart data...
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statsBySeverity}>
-                <XAxis dataKey="severity" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" name="Incidents" fill={BAR_COLOR} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+      {/* Incidents by Operator */}
+      <div className="card p-5">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <ShieldAlert size={20} className="text-blue-600" />
+          Incidents by Operator
+        </h2>
+        {statsByManufacturer.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {statsByManufacturer.map((item) => (
+              <div key={item.manufacturer} className="bg-gray-50 rounded-lg p-3 text-center">
+                <p className="text-sm font-medium text-gray-700">{item.manufacturer}</p>
+                <p className="text-xl font-bold text-gray-900">{item.count}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No operator data available.</p>
+        )}
       </div>
 
       {/* Filter Bar */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label
               htmlFor="safety-search"
@@ -364,18 +389,18 @@ export default function SafetyAnalytics() {
 
           <div>
             <label
-              htmlFor="safety-manufacturer"
+              htmlFor="safety-operator"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Manufacturer
+              Operator
             </label>
             <select
-              id="safety-manufacturer"
+              id="safety-operator"
               className="select-field"
-              value={manufacturerFilter}
-              onChange={(e) => setManufacturerFilter(e.target.value)}
+              value={operatorFilter}
+              onChange={(e) => setOperatorFilter(e.target.value)}
             >
-              {manufacturerOptions.map((option) => (
+              {operatorOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -396,32 +421,10 @@ export default function SafetyAnalytics() {
               value={incidentTypeFilter}
               onChange={(e) => setIncidentTypeFilter(e.target.value)}
             >
-              {INCIDENT_TYPE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="safety-severity"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Severity
-            </label>
-            <select
-              id="safety-severity"
-              className="select-field"
-              value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value)}
-            >
-              {SEVERITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              <option value="All">All</option>
+              <option value="Property Damage">Property Damage</option>
+              <option value="Injury">Injury</option>
+              <option value="Fatality">Fatality</option>
             </select>
           </div>
         </div>

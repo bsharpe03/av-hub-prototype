@@ -6,8 +6,30 @@ import ExportButton from '../components/ExportButton';
 import LastUpdated from '../components/LastUpdated';
 import StatusBadge from '../components/StatusBadge';
 
-const RESOURCE_TYPES = ['All', 'Report', 'White Paper', 'Policy Analysis', 'Guidance', 'Toolkit'];
-const TOPIC_AREAS = ['All', 'Policy', 'Safety', 'Technology', 'Equity', 'Infrastructure'];
+const RESOURCE_TYPES = ['All', 'Report', 'White Paper', 'Policy Analysis', 'Guidance', 'Toolkit', 'Policy Brief'];
+
+function capitalizeType(value) {
+  if (!value) return '\u2014';
+  // Map common lowercase/underscore values to proper case
+  const typeMap = {
+    'report': 'Report',
+    'white paper': 'White Paper',
+    'white_paper': 'White Paper',
+    'guidance': 'Guidance',
+    'policy brief': 'Policy Brief',
+    'policy_brief': 'Policy Brief',
+    'policy analysis': 'Policy Analysis',
+    'policy_analysis': 'Policy Analysis',
+    'toolkit': 'Toolkit',
+  };
+  return typeMap[value.toLowerCase()] || value;
+}
+
+function truncateText(text, maxLength = 100) {
+  if (!text) return '\u2014';
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+}
 
 export default function ResourceLibrary() {
   const [data, setData] = useState([]);
@@ -17,7 +39,6 @@ export default function ResourceLibrary() {
 
   const [search, setSearch] = useState('');
   const [resourceType, setResourceType] = useState('All');
-  const [topicArea, setTopicArea] = useState('All');
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +47,6 @@ export default function ResourceLibrary() {
 
     const params = {};
     if (resourceType !== 'All') params.resource_type = resourceType;
-    if (topicArea !== 'All') params.category = topicArea;
     if (search.trim()) params.search = search.trim();
 
     fetchResources(params)
@@ -41,7 +61,18 @@ export default function ResourceLibrary() {
       });
 
     return () => { cancelled = true; };
-  }, [resourceType, topicArea, search]);
+  }, [resourceType, search]);
+
+  // Sort by publication_date desc (newest first)
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      const dateA = a.publication_date || '';
+      const dateB = b.publication_date || '';
+      if (dateA > dateB) return -1;
+      if (dateA < dateB) return 1;
+      return 0;
+    });
+  }, [data]);
 
   const summaryStats = useMemo(() => {
     const total = data.length;
@@ -57,9 +88,8 @@ export default function ResourceLibrary() {
       key: 'resource_type',
       header: 'Type',
       sortable: true,
-      render: (value) => value ? <StatusBadge status={value} /> : <span className="text-gray-400">--</span>,
+      render: (value) => value ? <StatusBadge status={capitalizeType(value)} /> : <span className="text-gray-400">--</span>,
     },
-    { key: 'topic_area', header: 'Topic Area', sortable: true },
     {
       key: 'publication_date',
       header: 'Published',
@@ -79,8 +109,18 @@ export default function ResourceLibrary() {
         ),
     },
     {
+      key: 'summary',
+      header: 'Summary',
+      sortable: false,
+      render: (value) => (
+        <span title={value || ''} className="text-gray-600">
+          {truncateText(value, 80)}
+        </span>
+      ),
+    },
+    {
       key: 'url',
-      header: 'Link',
+      header: 'Source',
       sortable: false,
       render: (value) =>
         value ? (
@@ -92,7 +132,7 @@ export default function ResourceLibrary() {
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            View
+            Link
           </a>
         ) : (
           <span className="text-gray-400">--</span>
@@ -151,7 +191,7 @@ export default function ResourceLibrary() {
 
       {/* Filter Bar */}
       <div className="card p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <div className="lg:col-span-2">
             <label htmlFor="resource-search" className="label-field">
               Search
@@ -181,22 +221,6 @@ export default function ResourceLibrary() {
               ))}
             </select>
           </div>
-
-          <div>
-            <label htmlFor="topic-area" className="label-field">
-              Topic Area
-            </label>
-            <select
-              id="topic-area"
-              className="select-field"
-              value={topicArea}
-              onChange={(e) => setTopicArea(e.target.value)}
-            >
-              {TOPIC_AREAS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
@@ -217,7 +241,7 @@ export default function ResourceLibrary() {
       <div className="card overflow-hidden">
         <DataTable
           columns={columns}
-          data={data}
+          data={sortedData}
           loading={loading}
           onRowClick={(row) =>
             setSelectedRow((prev) => (prev && prev.id === row.id ? null : row))
@@ -279,6 +303,16 @@ export default function ResourceLibrary() {
                   {selectedRow.author_org}
                 </p>
               </div>
+              {selectedRow.resource_type && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Type
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    {capitalizeType(selectedRow.resource_type)}
+                  </p>
+                </div>
+              )}
               {selectedRow.url && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">

@@ -9,7 +9,7 @@ const navItems = [
   { path: '/funding', label: 'Funding' },
   { path: '/safety', label: 'Safety' },
   { path: '/resources', label: 'Resources' },
-  { path: '/curbside', label: 'Curbside' },
+  { path: '/news', label: 'News' },
 ]
 
 export default function Navigation() {
