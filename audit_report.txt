@@ -1,0 +1,455 @@
+AV HUB COMPREHENSIVE AUDIT REPORT
+Generated: 2026-03-07 04:19:48
+Backend URL: http://localhost:8000
+Database: /home/user/av-hub/backend/av_hub.db
+
+======================================================================
+SECTION 1 — API ENDPOINT AUDIT
+======================================================================
+
+Endpoint                                           Status   Records    Time(ms)   Result  
+--------------------------------------------------------------------------------------
+GET /api/policies                                  200      20         8.5        OK      
+GET /api/policies?status=active                    200      0          5.8        OK      
+GET /api/deployments                               200      75         8.2        OK      
+GET /api/deployments?vehicle_type=Passenger        200      75         6.4        OK      
+GET /api/funding                                   200      42         6.5        OK      
+GET /api/safety                                    200      640        31.1       OK      
+GET /api/safety/map/locations                      200      640        24.2       OK      
+GET /api/resources                                 200      102        7.7        OK      
+GET /api/news                                      200      103        7.0        OK      
+GET /api/dashboard                                 200      dict       10.7       OK      
+GET /api/curbside                                  200      25         5.4        OK      
+GET /api/policies/map/states                       200      20         19.8       OK      
+GET /api/deployments/map/locations                 200      75         5.7        OK      
+GET /api/curbside/map/locations                    200      25         4.3        OK      
+GET /api/safety/stats/by-manufacturer              200      10         3.8        OK      
+GET /api/safety/stats/by-type                      200      2          4.3        OK      
+GET /api/safety/stats/by-year                      200      4          4.5        OK      
+GET /api/safety/stats/by-severity                  200      3          4.2        OK      
+
+--- Filter Validation ---
+  PASS: status=active filter correct (0/20 policies)
+  PASS: vehicle_type=Passenger filter returned 75/75 deployments
+  ERROR testing search: Expecting value: line 1 column 1 (char 0)
+
+--- Dashboard Summary Consistency ---
+  PASS: Dashboard total_policies = 20, API count = 20
+  PASS: Dashboard total_deployments = 75, API count = 75
+  PASS: Dashboard total_funding_programs = 42, API count = 42
+  PASS: Dashboard total_safety_incidents = 640, API count = 640
+  PASS: Dashboard total_resources = 102, API count = 102
+  PASS: Dashboard total_news_articles = 103, API count = 103
+======================================================================
+
+SECTION 2 — DATA QUALITY AUDIT
+======================================================================
+
+--- Table: policies ---
+  Total records: 20
+  Missing source_url: 0
+  Placeholder/fake data entries: 0
+
+--- Table: deployments ---
+  Total records: 75
+  Missing source_url: 0
+  Placeholder/fake data entries: 0
+  All records have descriptions
+
+--- Table: funding_programs ---
+  Total records: 42
+  Missing source_url: 0
+  Placeholder/fake data entries: 0
+
+--- Table: safety_incidents ---
+  Total records: 640
+  Missing source_url: 0
+  Placeholder/fake data entries: 0
+  No duplicate report_ids found
+
+--- Table: resources ---
+  Total records: 102
+  Missing url: 0
+  Placeholder/fake data entries: 0
+  All records have summaries
+
+--- Table: news_articles ---
+  Total records: 103
+  Missing url: 0
+  Placeholder/fake data entries: 0
+  No articles older than 2023-01-01
+
+--- Table: curbside_regulations ---
+  Total records: 25
+  Missing source_url: 0
+  Placeholder/fake data entries: 0
+======================================================================
+
+SECTION 3 — LINK VALIDATION
+======================================================================
+
+Testing 50 URLs across all tables...
+
+Table                  ID    Status   Result          URL
+------------------------------------------------------------------------------------------------------------------------
+policies               1     N/A      CONN ERROR      https://www.leg.state.nv.us/Session/76th2011/Bills/AB/AB511_...
+policies               2     N/A      CONN ERROR      https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml...
+policies               3     N/A      CONN ERROR      https://www.flsenate.gov/Session/Bill/2016/52
+policies               4     N/A      CONN ERROR      https://azgovernor.gov/executive-orders
+policies               5     N/A      CONN ERROR      https://www.legislature.mi.gov/documents/2015-2016/billanaly...
+policies               6     N/A      CONN ERROR      https://capitol.texas.gov/BillLookup/History.aspx?LegSess=85...
+policies               7     N/A      CONN ERROR      https://www.legis.ga.gov/legislation/en-US/Display/20172018/...
+policies               8     N/A      CONN ERROR      https://www.legis.state.pa.us/cfdocs/legis/li/uconsCheck.cfm...
+policies               9     N/A      CONN ERROR      https://leg.colorado.gov/bills/sb17-213
+policies               10    N/A      CONN ERROR      https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillN...
+deployments            1     N/A      CONN ERROR      https://waymo.com/waymo-one-san-francisco
+deployments            2     N/A      CONN ERROR      https://waymo.com/waymo-one-phoenix
+deployments            3     N/A      CONN ERROR      https://waymo.com/waymo-one-los-angeles
+deployments            4     N/A      CONN ERROR      https://waymo.com/waymo-one-austin
+deployments            5     N/A      CONN ERROR      https://waymo.com/waymo-one-atlanta
+deployments            6     N/A      CONN ERROR      https://waymo.com/waymo-via
+deployments            7     N/A      CONN ERROR      https://getcruise.com
+deployments            8     N/A      CONN ERROR      https://getcruise.com/phoenix
+deployments            9     N/A      CONN ERROR      https://getcruise.com/houston
+deployments            10    N/A      CONN ERROR      https://getcruise.com/dallas
+funding_programs       1     N/A      CONN ERROR      https://www.transportation.gov/av/grants
+funding_programs       2     N/A      CONN ERROR      https://www.transportation.gov/grants/SMART
+funding_programs       3     N/A      CONN ERROR      https://www.transportation.gov/grants/SS4A
+funding_programs       4     N/A      CONN ERROR      https://www.transportation.gov/RAISEgrants
+funding_programs       5     N/A      CONN ERROR      https://www.fhwa.dot.gov/fastact/factsheets/advtranscongmgmt...
+funding_programs       6     N/A      CONN ERROR      https://nhtsa.gov/ads-demonstration
+funding_programs       7     N/A      CONN ERROR      https://www.transit.dot.gov/AIM
+funding_programs       8     N/A      CONN ERROR      https://www.nsf.gov/funding/pgm_summ.jsp?pims_id=505837
+funding_programs       9     N/A      CONN ERROR      https://www.energy.ca.gov/programs-and-topics/programs/clean...
+funding_programs       10    N/A      CONN ERROR      https://www.michigan.gov/mdot/programs/planning/mobility
+safety_incidents       1     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0001
+safety_incidents       2     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0002
+safety_incidents       3     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0003
+safety_incidents       4     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0004
+safety_incidents       5     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0005
+safety_incidents       6     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0006
+safety_incidents       7     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0007
+safety_incidents       8     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0008
+safety_incidents       9     N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0009
+safety_incidents       10    N/A      CONN ERROR      https://nhtsa.gov/odi/inv/sgo/2022/0010
+resources              1     N/A      CONN ERROR      https://nhtsa.gov/technology-innovation/automated-vehicles-s...
+resources              2     N/A      CONN ERROR      https://kpmg.com/autonomous-vehicles-readiness-index
+resources              3     N/A      CONN ERROR      https://ncsl.org/research/transportation/autonomous-vehicles...
+resources              4     N/A      CONN ERROR      https://transportation.gov/av/2.0
+resources              5     N/A      CONN ERROR      https://planning.org/publications/report/autonomous-vehicles
+resources              6     N/A      CONN ERROR      https://nhtsa.gov/technology-innovation/ads-safety-data
+resources              7     N/A      CONN ERROR      https://enotrans.org/article/autonomous-vehicles-future-urba...
+resources              8     N/A      CONN ERROR      https://rand.org/pubs/research_reports/autonomous-vehicle-po...
+resources              9     N/A      CONN ERROR      https://trb.org/Publications/Blurbs/connected-automated-vehi...
+resources              10    N/A      CONN ERROR      https://sae.org/publications/automated-driving-safety-metric...
+
+Total URLs tested: 50
+Broken links found: 50
+
+--- Broken Links Detail ---
+  [policies id=1] Status=Connection Error: https://www.leg.state.nv.us/Session/76th2011/Bills/AB/AB511_EN.pdf
+  [policies id=2] Status=Connection Error: https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201120120SB1298
+  [policies id=3] Status=Connection Error: https://www.flsenate.gov/Session/Bill/2016/52
+  [policies id=4] Status=Connection Error: https://azgovernor.gov/executive-orders
+  [policies id=5] Status=Connection Error: https://www.legislature.mi.gov/documents/2015-2016/billanalysis/Senate/pdf/2015-SFA-0995-N.pdf
+  [policies id=6] Status=Connection Error: https://capitol.texas.gov/BillLookup/History.aspx?LegSess=85R&Bill=SB2205
+  [policies id=7] Status=Connection Error: https://www.legis.ga.gov/legislation/en-US/Display/20172018/SB/219
+  [policies id=8] Status=Connection Error: https://www.legis.state.pa.us/cfdocs/legis/li/uconsCheck.cfm?yr=2022&sessInd=0&act=73
+  [policies id=9] Status=Connection Error: https://leg.colorado.gov/bills/sb17-213
+  [policies id=10] Status=Connection Error: https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=SB0151
+  [deployments id=1] Status=Connection Error: https://waymo.com/waymo-one-san-francisco
+  [deployments id=2] Status=Connection Error: https://waymo.com/waymo-one-phoenix
+  [deployments id=3] Status=Connection Error: https://waymo.com/waymo-one-los-angeles
+  [deployments id=4] Status=Connection Error: https://waymo.com/waymo-one-austin
+  [deployments id=5] Status=Connection Error: https://waymo.com/waymo-one-atlanta
+  [deployments id=6] Status=Connection Error: https://waymo.com/waymo-via
+  [deployments id=7] Status=Connection Error: https://getcruise.com
+  [deployments id=8] Status=Connection Error: https://getcruise.com/phoenix
+  [deployments id=9] Status=Connection Error: https://getcruise.com/houston
+  [deployments id=10] Status=Connection Error: https://getcruise.com/dallas
+  [funding_programs id=1] Status=Connection Error: https://www.transportation.gov/av/grants
+  [funding_programs id=2] Status=Connection Error: https://www.transportation.gov/grants/SMART
+  [funding_programs id=3] Status=Connection Error: https://www.transportation.gov/grants/SS4A
+  [funding_programs id=4] Status=Connection Error: https://www.transportation.gov/RAISEgrants
+  [funding_programs id=5] Status=Connection Error: https://www.fhwa.dot.gov/fastact/factsheets/advtranscongmgmtfs.cfm
+  [funding_programs id=6] Status=Connection Error: https://nhtsa.gov/ads-demonstration
+  [funding_programs id=7] Status=Connection Error: https://www.transit.dot.gov/AIM
+  [funding_programs id=8] Status=Connection Error: https://www.nsf.gov/funding/pgm_summ.jsp?pims_id=505837
+  [funding_programs id=9] Status=Connection Error: https://www.energy.ca.gov/programs-and-topics/programs/clean-transportation-program
+  [funding_programs id=10] Status=Connection Error: https://www.michigan.gov/mdot/programs/planning/mobility
+  [safety_incidents id=1] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0001
+  [safety_incidents id=2] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0002
+  [safety_incidents id=3] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0003
+  [safety_incidents id=4] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0004
+  [safety_incidents id=5] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0005
+  [safety_incidents id=6] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0006
+  [safety_incidents id=7] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0007
+  [safety_incidents id=8] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0008
+  [safety_incidents id=9] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0009
+  [safety_incidents id=10] Status=Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0010
+  [resources id=1] Status=Connection Error: https://nhtsa.gov/technology-innovation/automated-vehicles-safety
+  [resources id=2] Status=Connection Error: https://kpmg.com/autonomous-vehicles-readiness-index
+  [resources id=3] Status=Connection Error: https://ncsl.org/research/transportation/autonomous-vehicles-state-bill-tracking-database.aspx
+  [resources id=4] Status=Connection Error: https://transportation.gov/av/2.0
+  [resources id=5] Status=Connection Error: https://planning.org/publications/report/autonomous-vehicles
+  [resources id=6] Status=Connection Error: https://nhtsa.gov/technology-innovation/ads-safety-data
+  [resources id=7] Status=Connection Error: https://enotrans.org/article/autonomous-vehicles-future-urban-transit
+  [resources id=8] Status=Connection Error: https://rand.org/pubs/research_reports/autonomous-vehicle-policy
+  [resources id=9] Status=Connection Error: https://trb.org/Publications/Blurbs/connected-automated-vehicle-land-use
+  [resources id=10] Status=Connection Error: https://sae.org/publications/automated-driving-safety-metrics
+======================================================================
+
+SECTION 4 — FRONTEND BUILD AUDIT
+======================================================================
+  Built frontend found at /home/user/av-hub/backend/static
+  index.html exists
+  JS assets referenced: 1
+  CSS assets referenced: 2
+  Assets in build: 2 files
+    index-C86mHAvk.css (36,714 bytes)
+    index-o0JTt2B9.js (409,329 bytes)
+
+--- Hardcoded Data Check ---
+
+--- Route Verification ---
+  Route /               (Dashboard                ): FOUND
+  Route /policies       (PolicyTracker            ): FOUND
+  Route /deployments    (DeploymentDashboard      ): FOUND
+  Route /funding        (FundingIntelligence      ): FOUND
+  Route /safety         (SafetyAnalytics          ): FOUND
+  Route /resources      (ResourceLibrary          ): FOUND
+  Route /news           (News                     ): FOUND
+  Route /admin          (Admin                    ): FOUND
+
+--- Frontend Serving Check ---
+  PASS: Frontend serves correctly from backend (HTTP 200)
+
+--- Build Output Check ---
+  PASS: Frontend builds successfully
+======================================================================
+
+SECTION 5 — DATA CONSISTENCY AUDIT
+======================================================================
+
+--- Operator Name Consistency (Safety vs Deployments) ---
+  Safety manufacturers: ['Aurora', 'Cruise', 'Kodiak Robotics', 'May Mobility', 'Motional', 'Nuro', 'Torc Robotics', 'TuSimple', 'Waymo', 'Zoox']
+  Deployment operators: ['Argo AI', 'Aurora', 'Beep', 'Coco', 'Cruise', 'EasyMile', 'Embark', 'Gatik', 'Isee', 'Kodiak Robotics', 'Local Motors', 'May Mobility', 'Mobileye', 'Motional', 'Navya', 'Nuro', 'Optimus Ride', 'Oxa', 'Perceptive Automata', 'Phantom Auto', 'Plus.ai', 'Pony.ai', 'Pronto', 'Serve Robotics', 'Starship Technologies', 'Torc Robotics', 'TuSimple', 'Waabi', 'Waymo', 'WeRide', 'Zoox']
+  INFO: In deployments but not safety (OK): ['Argo AI', 'Beep', 'Coco', 'EasyMile', 'Embark', 'Gatik', 'Isee', 'Local Motors', 'Mobileye', 'Navya', 'Optimus Ride', 'Oxa', 'Perceptive Automata', 'Phantom Auto', 'Plus.ai', 'Pony.ai', 'Pronto', 'Serve Robotics', 'Starship Technologies', 'Waabi', 'WeRide']
+  PASS: All safety manufacturers exist in deployments
+
+--- State Name Formatting Consistency ---
+  policies.jurisdiction: Uses full names (20 values)
+  deployments.state: Uses full names (18 values)
+  safety_incidents.state: Uses full names (9 values)
+  curbside_regulations.state: Uses full names (12 values)
+
+--- Date Format Consistency ---
+  PASS: policies.date_enacted uses YYYY-MM-DD (20 unique dates sampled)
+  PASS: deployments.start_date uses YYYY-MM-DD (20 unique dates sampled)
+  PASS: safety_incidents.date uses YYYY-MM-DD (20 unique dates sampled)
+  PASS: funding_programs.application_deadline uses YYYY-MM-DD (8 unique dates sampled)
+  PASS: news_articles.publication_date uses YYYY-MM-DD (20 unique dates sampled)
+  PASS: resources.publication_date uses YYYY-MM-DD (20 unique dates sampled)
+
+--- Status Value Capitalization ---
+  policies.status: ['enacted', 'pending']
+    PASS: Consistent capitalization (lower)
+  deployments.status: ['active', 'completed', 'suspended', 'testing']
+    PASS: Consistent capitalization (lower)
+  funding_programs.status: ['active', 'closed']
+    PASS: Consistent capitalization (lower)
+  curbside_regulations.status: ['active']
+    PASS: Consistent capitalization (lower)
+======================================================================
+
+SECTION 6 — SUMMARY REPORT
+======================================================================
+
+--- 1. Section Results ---
+  [PASS] Section 1: API Endpoints
+  [PASS] Section 2: Data Quality
+  [FAIL] Section 3: Link Validation
+  [PASS] Section 4: Frontend Build
+  [PASS] Section 5: Data Consistency
+
+  OVERALL: FAIL
+
+--- 2. Critical Issues (Blocking Demo) ---
+  None found!
+
+--- 3. Important Issues (Fix Before External Demo) ---
+  1. Broken link in policies id=1: https://www.leg.state.nv.us/Session/76th2011/Bills/AB/AB511_EN.pdf
+  2. Broken link in policies id=2: https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201120120SB1298
+  3. Broken link in policies id=3: https://www.flsenate.gov/Session/Bill/2016/52
+  4. Broken link in policies id=4: https://azgovernor.gov/executive-orders
+  5. Broken link in policies id=5: https://www.legislature.mi.gov/documents/2015-2016/billanalysis/Senate/pdf/2015-SFA-0995-N.pdf
+  6. Broken link in policies id=6: https://capitol.texas.gov/BillLookup/History.aspx?LegSess=85R&Bill=SB2205
+  7. Broken link in policies id=7: https://www.legis.ga.gov/legislation/en-US/Display/20172018/SB/219
+  8. Broken link in policies id=8: https://www.legis.state.pa.us/cfdocs/legis/li/uconsCheck.cfm?yr=2022&sessInd=0&act=73
+  9. Broken link in policies id=9: https://leg.colorado.gov/bills/sb17-213
+  10. Broken link in policies id=10: https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=SB0151
+  11. Broken link in deployments id=1: https://waymo.com/waymo-one-san-francisco
+  12. Broken link in deployments id=2: https://waymo.com/waymo-one-phoenix
+  13. Broken link in deployments id=3: https://waymo.com/waymo-one-los-angeles
+  14. Broken link in deployments id=4: https://waymo.com/waymo-one-austin
+  15. Broken link in deployments id=5: https://waymo.com/waymo-one-atlanta
+  16. Broken link in deployments id=6: https://waymo.com/waymo-via
+  17. Broken link in deployments id=7: https://getcruise.com
+  18. Broken link in deployments id=8: https://getcruise.com/phoenix
+  19. Broken link in deployments id=9: https://getcruise.com/houston
+  20. Broken link in deployments id=10: https://getcruise.com/dallas
+  21. Broken link in funding_programs id=1: https://www.transportation.gov/av/grants
+  22. Broken link in funding_programs id=2: https://www.transportation.gov/grants/SMART
+  23. Broken link in funding_programs id=3: https://www.transportation.gov/grants/SS4A
+  24. Broken link in funding_programs id=4: https://www.transportation.gov/RAISEgrants
+  25. Broken link in funding_programs id=5: https://www.fhwa.dot.gov/fastact/factsheets/advtranscongmgmtfs.cfm
+  26. Broken link in funding_programs id=6: https://nhtsa.gov/ads-demonstration
+  27. Broken link in funding_programs id=7: https://www.transit.dot.gov/AIM
+  28. Broken link in funding_programs id=8: https://www.nsf.gov/funding/pgm_summ.jsp?pims_id=505837
+  29. Broken link in funding_programs id=9: https://www.energy.ca.gov/programs-and-topics/programs/clean-transportation-program
+  30. Broken link in funding_programs id=10: https://www.michigan.gov/mdot/programs/planning/mobility
+  31. Broken link in safety_incidents id=1: https://nhtsa.gov/odi/inv/sgo/2022/0001
+  32. Broken link in safety_incidents id=2: https://nhtsa.gov/odi/inv/sgo/2022/0002
+  33. Broken link in safety_incidents id=3: https://nhtsa.gov/odi/inv/sgo/2022/0003
+  34. Broken link in safety_incidents id=4: https://nhtsa.gov/odi/inv/sgo/2022/0004
+  35. Broken link in safety_incidents id=5: https://nhtsa.gov/odi/inv/sgo/2022/0005
+  36. Broken link in safety_incidents id=6: https://nhtsa.gov/odi/inv/sgo/2022/0006
+  37. Broken link in safety_incidents id=7: https://nhtsa.gov/odi/inv/sgo/2022/0007
+  38. Broken link in safety_incidents id=8: https://nhtsa.gov/odi/inv/sgo/2022/0008
+  39. Broken link in safety_incidents id=9: https://nhtsa.gov/odi/inv/sgo/2022/0009
+  40. Broken link in safety_incidents id=10: https://nhtsa.gov/odi/inv/sgo/2022/0010
+  41. Broken link in resources id=1: https://nhtsa.gov/technology-innovation/automated-vehicles-safety
+  42. Broken link in resources id=2: https://kpmg.com/autonomous-vehicles-readiness-index
+  43. Broken link in resources id=3: https://ncsl.org/research/transportation/autonomous-vehicles-state-bill-tracking-database.aspx
+  44. Broken link in resources id=4: https://transportation.gov/av/2.0
+  45. Broken link in resources id=5: https://planning.org/publications/report/autonomous-vehicles
+  46. Broken link in resources id=6: https://nhtsa.gov/technology-innovation/ads-safety-data
+  47. Broken link in resources id=7: https://enotrans.org/article/autonomous-vehicles-future-urban-transit
+  48. Broken link in resources id=8: https://rand.org/pubs/research_reports/autonomous-vehicle-policy
+  49. Broken link in resources id=9: https://trb.org/Publications/Blurbs/connected-automated-vehicle-land-use
+  50. Broken link in resources id=10: https://sae.org/publications/automated-driving-safety-metrics
+
+--- 4. Minor Issues (Nice to Fix) ---
+  None found!
+
+--- 5. Data Counts Summary ---
+  Table                     Records   
+  -----------------------------------
+  policies                  20        
+  deployments               75        
+  funding_programs          42        
+  safety_incidents          640       
+  resources                 102       
+  news_articles             103       
+  curbside_regulations      25        
+  -----------------------------------
+  TOTAL                     1007      
+
+--- 6. Broken Links ---
+  [policies id=1] Connection Error: https://www.leg.state.nv.us/Session/76th2011/Bills/AB/AB511_EN.pdf
+  [policies id=2] Connection Error: https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201120120SB1298
+  [policies id=3] Connection Error: https://www.flsenate.gov/Session/Bill/2016/52
+  [policies id=4] Connection Error: https://azgovernor.gov/executive-orders
+  [policies id=5] Connection Error: https://www.legislature.mi.gov/documents/2015-2016/billanalysis/Senate/pdf/2015-SFA-0995-N.pdf
+  [policies id=6] Connection Error: https://capitol.texas.gov/BillLookup/History.aspx?LegSess=85R&Bill=SB2205
+  [policies id=7] Connection Error: https://www.legis.ga.gov/legislation/en-US/Display/20172018/SB/219
+  [policies id=8] Connection Error: https://www.legis.state.pa.us/cfdocs/legis/li/uconsCheck.cfm?yr=2022&sessInd=0&act=73
+  [policies id=9] Connection Error: https://leg.colorado.gov/bills/sb17-213
+  [policies id=10] Connection Error: https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=SB0151
+  [deployments id=1] Connection Error: https://waymo.com/waymo-one-san-francisco
+  [deployments id=2] Connection Error: https://waymo.com/waymo-one-phoenix
+  [deployments id=3] Connection Error: https://waymo.com/waymo-one-los-angeles
+  [deployments id=4] Connection Error: https://waymo.com/waymo-one-austin
+  [deployments id=5] Connection Error: https://waymo.com/waymo-one-atlanta
+  [deployments id=6] Connection Error: https://waymo.com/waymo-via
+  [deployments id=7] Connection Error: https://getcruise.com
+  [deployments id=8] Connection Error: https://getcruise.com/phoenix
+  [deployments id=9] Connection Error: https://getcruise.com/houston
+  [deployments id=10] Connection Error: https://getcruise.com/dallas
+  [funding_programs id=1] Connection Error: https://www.transportation.gov/av/grants
+  [funding_programs id=2] Connection Error: https://www.transportation.gov/grants/SMART
+  [funding_programs id=3] Connection Error: https://www.transportation.gov/grants/SS4A
+  [funding_programs id=4] Connection Error: https://www.transportation.gov/RAISEgrants
+  [funding_programs id=5] Connection Error: https://www.fhwa.dot.gov/fastact/factsheets/advtranscongmgmtfs.cfm
+  [funding_programs id=6] Connection Error: https://nhtsa.gov/ads-demonstration
+  [funding_programs id=7] Connection Error: https://www.transit.dot.gov/AIM
+  [funding_programs id=8] Connection Error: https://www.nsf.gov/funding/pgm_summ.jsp?pims_id=505837
+  [funding_programs id=9] Connection Error: https://www.energy.ca.gov/programs-and-topics/programs/clean-transportation-program
+  [funding_programs id=10] Connection Error: https://www.michigan.gov/mdot/programs/planning/mobility
+  [safety_incidents id=1] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0001
+  [safety_incidents id=2] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0002
+  [safety_incidents id=3] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0003
+  [safety_incidents id=4] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0004
+  [safety_incidents id=5] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0005
+  [safety_incidents id=6] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0006
+  [safety_incidents id=7] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0007
+  [safety_incidents id=8] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0008
+  [safety_incidents id=9] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0009
+  [safety_incidents id=10] Connection Error: https://nhtsa.gov/odi/inv/sgo/2022/0010
+  [resources id=1] Connection Error: https://nhtsa.gov/technology-innovation/automated-vehicles-safety
+  [resources id=2] Connection Error: https://kpmg.com/autonomous-vehicles-readiness-index
+  [resources id=3] Connection Error: https://ncsl.org/research/transportation/autonomous-vehicles-state-bill-tracking-database.aspx
+  [resources id=4] Connection Error: https://transportation.gov/av/2.0
+  [resources id=5] Connection Error: https://planning.org/publications/report/autonomous-vehicles
+  [resources id=6] Connection Error: https://nhtsa.gov/technology-innovation/ads-safety-data
+  [resources id=7] Connection Error: https://enotrans.org/article/autonomous-vehicles-future-urban-transit
+  [resources id=8] Connection Error: https://rand.org/pubs/research_reports/autonomous-vehicle-policy
+  [resources id=9] Connection Error: https://trb.org/Publications/Blurbs/connected-automated-vehicle-land-use
+  [resources id=10] Connection Error: https://sae.org/publications/automated-driving-safety-metrics
+
+--- 7. Recommended Priority Order for Fixes ---
+  P1 (IMPORTANT): Broken link in policies id=1: https://www.leg.state.nv.us/Session/76th2011/Bills/AB/AB511_EN.pdf
+  P2 (IMPORTANT): Broken link in policies id=2: https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=201120120SB1298
+  P3 (IMPORTANT): Broken link in policies id=3: https://www.flsenate.gov/Session/Bill/2016/52
+  P4 (IMPORTANT): Broken link in policies id=4: https://azgovernor.gov/executive-orders
+  P5 (IMPORTANT): Broken link in policies id=5: https://www.legislature.mi.gov/documents/2015-2016/billanalysis/Senate/pdf/2015-SFA-0995-N.pdf
+  P6 (IMPORTANT): Broken link in policies id=6: https://capitol.texas.gov/BillLookup/History.aspx?LegSess=85R&Bill=SB2205
+  P7 (IMPORTANT): Broken link in policies id=7: https://www.legis.ga.gov/legislation/en-US/Display/20172018/SB/219
+  P8 (IMPORTANT): Broken link in policies id=8: https://www.legis.state.pa.us/cfdocs/legis/li/uconsCheck.cfm?yr=2022&sessInd=0&act=73
+  P9 (IMPORTANT): Broken link in policies id=9: https://leg.colorado.gov/bills/sb17-213
+  P10 (IMPORTANT): Broken link in policies id=10: https://wapp.capitol.tn.gov/apps/BillInfo/Default.aspx?BillNumber=SB0151
+  P11 (IMPORTANT): Broken link in deployments id=1: https://waymo.com/waymo-one-san-francisco
+  P12 (IMPORTANT): Broken link in deployments id=2: https://waymo.com/waymo-one-phoenix
+  P13 (IMPORTANT): Broken link in deployments id=3: https://waymo.com/waymo-one-los-angeles
+  P14 (IMPORTANT): Broken link in deployments id=4: https://waymo.com/waymo-one-austin
+  P15 (IMPORTANT): Broken link in deployments id=5: https://waymo.com/waymo-one-atlanta
+  P16 (IMPORTANT): Broken link in deployments id=6: https://waymo.com/waymo-via
+  P17 (IMPORTANT): Broken link in deployments id=7: https://getcruise.com
+  P18 (IMPORTANT): Broken link in deployments id=8: https://getcruise.com/phoenix
+  P19 (IMPORTANT): Broken link in deployments id=9: https://getcruise.com/houston
+  P20 (IMPORTANT): Broken link in deployments id=10: https://getcruise.com/dallas
+  P21 (IMPORTANT): Broken link in funding_programs id=1: https://www.transportation.gov/av/grants
+  P22 (IMPORTANT): Broken link in funding_programs id=2: https://www.transportation.gov/grants/SMART
+  P23 (IMPORTANT): Broken link in funding_programs id=3: https://www.transportation.gov/grants/SS4A
+  P24 (IMPORTANT): Broken link in funding_programs id=4: https://www.transportation.gov/RAISEgrants
+  P25 (IMPORTANT): Broken link in funding_programs id=5: https://www.fhwa.dot.gov/fastact/factsheets/advtranscongmgmtfs.cfm
+  P26 (IMPORTANT): Broken link in funding_programs id=6: https://nhtsa.gov/ads-demonstration
+  P27 (IMPORTANT): Broken link in funding_programs id=7: https://www.transit.dot.gov/AIM
+  P28 (IMPORTANT): Broken link in funding_programs id=8: https://www.nsf.gov/funding/pgm_summ.jsp?pims_id=505837
+  P29 (IMPORTANT): Broken link in funding_programs id=9: https://www.energy.ca.gov/programs-and-topics/programs/clean-transportation-program
+  P30 (IMPORTANT): Broken link in funding_programs id=10: https://www.michigan.gov/mdot/programs/planning/mobility
+  P31 (IMPORTANT): Broken link in safety_incidents id=1: https://nhtsa.gov/odi/inv/sgo/2022/0001
+  P32 (IMPORTANT): Broken link in safety_incidents id=2: https://nhtsa.gov/odi/inv/sgo/2022/0002
+  P33 (IMPORTANT): Broken link in safety_incidents id=3: https://nhtsa.gov/odi/inv/sgo/2022/0003
+  P34 (IMPORTANT): Broken link in safety_incidents id=4: https://nhtsa.gov/odi/inv/sgo/2022/0004
+  P35 (IMPORTANT): Broken link in safety_incidents id=5: https://nhtsa.gov/odi/inv/sgo/2022/0005
+  P36 (IMPORTANT): Broken link in safety_incidents id=6: https://nhtsa.gov/odi/inv/sgo/2022/0006
+  P37 (IMPORTANT): Broken link in safety_incidents id=7: https://nhtsa.gov/odi/inv/sgo/2022/0007
+  P38 (IMPORTANT): Broken link in safety_incidents id=8: https://nhtsa.gov/odi/inv/sgo/2022/0008
+  P39 (IMPORTANT): Broken link in safety_incidents id=9: https://nhtsa.gov/odi/inv/sgo/2022/0009
+  P40 (IMPORTANT): Broken link in safety_incidents id=10: https://nhtsa.gov/odi/inv/sgo/2022/0010
+  P41 (IMPORTANT): Broken link in resources id=1: https://nhtsa.gov/technology-innovation/automated-vehicles-safety
+  P42 (IMPORTANT): Broken link in resources id=2: https://kpmg.com/autonomous-vehicles-readiness-index
+  P43 (IMPORTANT): Broken link in resources id=3: https://ncsl.org/research/transportation/autonomous-vehicles-state-bill-tracking-database.aspx
+  P44 (IMPORTANT): Broken link in resources id=4: https://transportation.gov/av/2.0
+  P45 (IMPORTANT): Broken link in resources id=5: https://planning.org/publications/report/autonomous-vehicles
+  P46 (IMPORTANT): Broken link in resources id=6: https://nhtsa.gov/technology-innovation/ads-safety-data
+  P47 (IMPORTANT): Broken link in resources id=7: https://enotrans.org/article/autonomous-vehicles-future-urban-transit
+  P48 (IMPORTANT): Broken link in resources id=8: https://rand.org/pubs/research_reports/autonomous-vehicle-policy
+  P49 (IMPORTANT): Broken link in resources id=9: https://trb.org/Publications/Blurbs/connected-automated-vehicle-land-use
+  P50 (IMPORTANT): Broken link in resources id=10: https://sae.org/publications/automated-driving-safety-metrics
+
+======================================================================
+Audit completed at 2026-03-07 04:19:57
+Total issues: 0 critical, 50 important, 0 minor
+======================================================================
