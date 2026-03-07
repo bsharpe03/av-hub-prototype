@@ -88,7 +88,7 @@ export default function DataTable({ columns, data, onRowClick }) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <span className="text-sm text-gray-600">
-            Showing {page * pageSize + 1}\u2013{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
+            Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
           </span>
           <div className="flex gap-2">
             <button

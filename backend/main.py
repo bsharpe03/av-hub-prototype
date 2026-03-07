@@ -188,7 +188,7 @@ def _filter_policies(
 ):
     q = db.query(Policy)
     if status:
-        q = q.filter(Policy.status == status)
+        q = q.filter(func.lower(Policy.status) == status.lower())
     if jurisdiction:
         q = q.filter(Policy.jurisdiction == jurisdiction)
     if state_code:
@@ -198,7 +198,7 @@ def _filter_policies(
             or_(
                 Policy.title.ilike(f"%{search}%"),
                 Policy.jurisdiction.ilike(f"%{search}%"),
-                Policy.description.ilike(f"%{search}%"),
+                Policy.summary.ilike(f"%{search}%"),
             )
         )
     return q
@@ -331,16 +331,19 @@ def _filter_deployments(
     city: Optional[str] = None,
     state: Optional[str] = None,
     search: Optional[str] = None,
+    vehicle_type: Optional[str] = None,
 ):
     q = db.query(Deployment)
     if status:
-        q = q.filter(Deployment.status == status)
+        q = q.filter(func.lower(Deployment.status) == status.lower())
     if operator:
         q = q.filter(Deployment.operator == operator)
     if city:
         q = q.filter(Deployment.city == city)
     if state:
         q = q.filter(Deployment.state == state)
+    if vehicle_type:
+        q = q.filter(func.lower(Deployment.vehicle_type) == vehicle_type.lower())
     if search:
         q = q.filter(
             or_(
@@ -392,9 +395,10 @@ def list_deployments(
     city: Optional[str] = None,
     state: Optional[str] = None,
     search: Optional[str] = None,
+    vehicle_type: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    return _filter_deployments(db, status, operator, city, state, search).all()
+    return _filter_deployments(db, status, operator, city, state, search, vehicle_type).all()
 
 
 @app.get("/api/deployments/{id}", response_model=DeploymentOut)
@@ -461,11 +465,11 @@ def _filter_funding(
 ):
     q = db.query(FundingProgram)
     if status:
-        q = q.filter(FundingProgram.status == status)
+        q = q.filter(func.lower(FundingProgram.status) == status.lower())
     if agency:
-        q = q.filter(FundingProgram.agency == agency)
+        q = q.filter(FundingProgram.agency.ilike(f"%{agency}%"))
     if funding_type:
-        q = q.filter(FundingProgram.funding_type == funding_type)
+        q = q.filter(func.lower(FundingProgram.funding_type) == funding_type.lower())
     if search:
         q = q.filter(
             or_(
@@ -566,20 +570,20 @@ def _filter_safety(
 ):
     q = db.query(SafetyIncident)
     if severity:
-        q = q.filter(SafetyIncident.severity == severity)
+        q = q.filter(func.lower(SafetyIncident.severity) == severity.lower())
     if manufacturer:
         q = q.filter(SafetyIncident.manufacturer == manufacturer)
     if incident_type:
-        q = q.filter(SafetyIncident.incident_type == incident_type)
+        q = q.filter(func.lower(SafetyIncident.incident_type) == incident_type.lower())
     if state:
         q = q.filter(SafetyIncident.state == state)
     if search:
         q = q.filter(
             or_(
-                SafetyIncident.title.ilike(f"%{search}%"),
+                SafetyIncident.report_id.ilike(f"%{search}%"),
                 SafetyIncident.manufacturer.ilike(f"%{search}%"),
                 SafetyIncident.description.ilike(f"%{search}%"),
-                SafetyIncident.location.ilike(f"%{search}%"),
+                SafetyIncident.city.ilike(f"%{search}%"),
             )
         )
     return q

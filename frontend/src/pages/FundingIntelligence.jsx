@@ -7,7 +7,7 @@ import ExportButton from '../components/ExportButton';
 import LastUpdated from '../components/LastUpdated';
 
 const AGENCIES = ['All', 'USDOT', 'FTA', 'FHWA', 'NHTSA', 'NSF', 'State Programs'];
-const STATUSES = ['All', 'Open', 'Closed', 'Upcoming'];
+const STATUSES = ['All', 'Active', 'Closed'];
 const FUNDING_TYPES = ['All', 'Grant', 'Loan', 'Tax Credit'];
 
 function formatBillions(value) {
@@ -93,11 +93,11 @@ export default function FundingIntelligence() {
     }
 
     if (status !== 'All') {
-      rows = rows.filter((row) => row.status === status);
+      rows = rows.filter((row) => row.status && row.status.toLowerCase() === status.toLowerCase());
     }
 
     if (fundingType !== 'All') {
-      rows = rows.filter((row) => row.funding_type === fundingType);
+      rows = rows.filter((row) => row.funding_type && row.funding_type.toLowerCase() === fundingType.toLowerCase());
     }
 
     return rows;
@@ -106,15 +106,13 @@ export default function FundingIntelligence() {
   const summaryCards = useMemo(() => {
     const rows = Array.isArray(data) ? data : [];
     const totalPrograms = rows.length;
-    const openPrograms = rows.filter((r) => r.status === 'Open').length;
+    const openPrograms = rows.filter((r) => r.status && r.status.toLowerCase() === 'active').length;
+    const federalAgencies = ['USDOT', 'FTA', 'FHWA', 'NHTSA', 'NSF', 'DARPA', 'US Congress', 'Department of Energy', 'SAFE', 'TRB/NCHRP', 'AAA Foundation'];
     const federalPrograms = rows.filter(
       (r) =>
-        r.agency && r.agency !== 'State Programs' && !r.agency.toLowerCase().startsWith('state')
+        r.agency && (federalAgencies.some(a => r.agency.toUpperCase().includes(a.toUpperCase())) || r.agency.startsWith('USDOT'))
     ).length;
-    const statePrograms = rows.filter(
-      (r) =>
-        r.agency && (r.agency === 'State Programs' || r.agency.toLowerCase().startsWith('state'))
-    ).length;
+    const statePrograms = rows.length - federalPrograms;
 
     return { totalPrograms, openPrograms, federalPrograms, statePrograms };
   }, [data]);

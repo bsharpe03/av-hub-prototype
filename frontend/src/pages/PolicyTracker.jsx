@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Search, Filter, MapPin, ExternalLink } from 'lucide-react'
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, GeoJSON, Popup } from 'react-leaflet'
+import usStatesGeo from '../data/us-states.json'
 import 'leaflet/dist/leaflet.css'
 import { fetchPolicies, fetchPolicyMapStates, fetchCurbsideMapLocations } from '../api'
 import DataTable from '../components/DataTable'
@@ -227,35 +228,39 @@ export default function PolicyTracker() {
           />
 
           {/* State Regulations View - Choropleth */}
-          {mapView === 'state' && Object.entries(stateCenters).map(([code, coords]) => {
-            const data = stateMap[code]
-            const count = data?.count || data?.policy_count || 0
-            const stateStatus = data?.status || null
-            let fillColor = POLICY_STATUS_COLORS.none
-            if (count > 0 && stateStatus) {
-              fillColor = POLICY_STATUS_COLORS[stateStatus.toLowerCase()] || POLICY_STATUS_COLORS.none
-            }
-            return (
-              <CircleMarker
-                key={code}
-                center={coords}
-                radius={13}
-                fillColor={fillColor}
-                color={count > 0 ? '#888' : '#d1d5db'}
-                weight={1.5}
-                opacity={1}
-                fillOpacity={0.85}
-              >
-                <Popup>
-                  <div className="text-sm">
-                    <strong>{code}</strong>
-                    <div>{count} {count === 1 ? 'regulation' : 'regulations'}</div>
-                    {stateStatus && <div className="text-gray-600 capitalize">{stateStatus}</div>}
-                  </div>
-                </Popup>
-              </CircleMarker>
-            )
-          })}
+          {mapView === 'state' && (
+            <GeoJSON
+              key="policy-choropleth"
+              data={usStatesGeo}
+              style={(feature) => {
+                const code = feature.properties.STUSPS
+                const data = stateMap[code]
+                const count = data?.count || 0
+                const stateStatus = data?.status || null
+                let fillColor = POLICY_STATUS_COLORS.none
+                if (count > 0 && stateStatus) {
+                  fillColor = POLICY_STATUS_COLORS[stateStatus.toLowerCase()] || POLICY_STATUS_COLORS.none
+                }
+                return {
+                  fillColor,
+                  color: count > 0 ? '#666' : '#ccc',
+                  weight: 1,
+                  fillOpacity: 0.7,
+                }
+              }}
+              onEachFeature={(feature, layer) => {
+                const code = feature.properties.STUSPS
+                const name = feature.properties.NAME
+                const data = stateMap[code]
+                const count = data?.count || 0
+                const stateStatus = data?.status || 'No policy'
+                layer.bindTooltip(`<strong>${name}</strong><br/>${count} ${count === 1 ? 'regulation' : 'regulations'}<br/><span style="text-transform:capitalize">${stateStatus}</span>`, { sticky: true })
+                layer.on('click', () => {
+                  setJurisdiction(name)
+                })
+              }}
+            />
+          )}
 
           {/* Curbside Regulations View - City dots */}
           {mapView === 'curbside' && curbsideLocations.map((loc, i) => (

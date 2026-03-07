@@ -150,7 +150,7 @@ export default function DeploymentDashboard() {
   const summaryStats = useMemo(() => {
     const total = deployments.length;
     const activeCount = deployments.filter(
-      (d) => d.status === "Active"
+      (d) => d.status && d.status.toLowerCase() === "active"
     ).length;
     const uniqueStates = new Set(deployments.map((d) => d.state)).size;
     const uniqueOperators = new Set(deployments.map((d) => d.operator)).size;
@@ -160,10 +160,13 @@ export default function DeploymentDashboard() {
 
   // Build map markers with colors based on status
   const mapMarkers = useMemo(() => {
-    return mapLocations.map((loc) => ({
-      ...loc,
-      color: STATUS_COLORS[loc.status] || "#6b7280",
-    }));
+    return mapLocations.map((loc) => {
+      const capitalized = loc.status ? loc.status.charAt(0).toUpperCase() + loc.status.slice(1).toLowerCase() : '';
+      return {
+        ...loc,
+        color: STATUS_COLORS[capitalized] || "#6b7280",
+      };
+    });
   }, [mapLocations]);
 
   return (

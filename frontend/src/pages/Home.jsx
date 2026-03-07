@@ -11,7 +11,8 @@ import {
   ExternalLink,
   Map,
 } from 'lucide-react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, GeoJSON, Popup } from 'react-leaflet';
+import usStatesGeo from '../data/us-states.json';
 import 'leaflet/dist/leaflet.css';
 import { fetchDashboard, fetchPolicyMapStates, fetchDeploymentMapLocations, fetchSafetyMapLocations } from '../api';
 import StatusBadge from '../components/StatusBadge';
@@ -175,36 +176,37 @@ function DashboardMap({ policyStates, deploymentLocations, incidentLocations }) 
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Policies Layer - choropleth style */}
-        {activeLayer === 'policies' && Object.entries(stateCenters).map(([code, coords]) => {
-          const data = policyMap[code];
-          const count = data?.count || data?.policy_count || 0;
-          const status = data?.status || null;
-          let fillColor = POLICY_STATUS_COLORS.none;
-          if (count > 0 && status) {
-            fillColor = POLICY_STATUS_COLORS[status.toLowerCase()] || POLICY_STATUS_COLORS.none;
-          }
-          return (
-            <CircleMarker
-              key={code}
-              center={coords}
-              radius={13}
-              fillColor={fillColor}
-              color={count > 0 ? '#888' : '#d1d5db'}
-              weight={1.5}
-              opacity={1}
-              fillOpacity={0.85}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <strong>{code}</strong>
-                  <div>{count} {count === 1 ? 'policy' : 'policies'}</div>
-                  {status && <div className="text-gray-600 capitalize">{status}</div>}
-                </div>
-              </Popup>
-            </CircleMarker>
-          );
-        })}
+        {/* Policies Layer - choropleth */}
+        {activeLayer === 'policies' && (
+          <GeoJSON
+            key="policy-choropleth"
+            data={usStatesGeo}
+            style={(feature) => {
+              const code = feature.properties.STUSPS;
+              const data = policyMap[code];
+              const count = data?.count || 0;
+              const status = data?.status || null;
+              let fillColor = POLICY_STATUS_COLORS.none;
+              if (count > 0 && status) {
+                fillColor = POLICY_STATUS_COLORS[status.toLowerCase()] || POLICY_STATUS_COLORS.none;
+              }
+              return {
+                fillColor,
+                color: count > 0 ? '#666' : '#ccc',
+                weight: 1,
+                fillOpacity: 0.7,
+              };
+            }}
+            onEachFeature={(feature, layer) => {
+              const code = feature.properties.STUSPS;
+              const name = feature.properties.NAME;
+              const data = policyMap[code];
+              const count = data?.count || 0;
+              const status = data?.status || 'No policy';
+              layer.bindTooltip(`<strong>${name}</strong><br/>${count} ${count === 1 ? 'policy' : 'policies'}<br/><span style="text-transform:capitalize">${status}</span>`, { sticky: true });
+            }}
+          />
+        )}
 
         {/* Deployments Layer - colored dots by operator status */}
         {activeLayer === 'deployments' && deploymentLocations.map((loc, i) => (
@@ -395,9 +397,9 @@ export default function Home() {
                     <p className="text-sm font-medium text-gray-500">
                       {card.label}
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-gray-900">
                       {card.renderValue ? card.renderValue(value, dashboard) : value}
-                    </p>
+                    </div>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-blue-700 transition-colors" />
