@@ -91,6 +91,22 @@ const MAP_LAYERS = [
   { key: 'incidents', label: 'Incidents' },
 ];
 
+const STATE_NAME_TO_CODE = {
+  "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR",
+  "California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE",
+  "Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
+  "Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS",
+  "Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD",
+  "Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+  "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV",
+  "New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY",
+  "North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
+  "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC",
+  "South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT",
+  "Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV",
+  "Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"
+};
+
 const POLICY_STATUS_COLORS = {
   enacted: '#C1DEA6',
   active: '#C1DEA6',
@@ -180,9 +196,10 @@ function DashboardMap({ policyStates, deploymentLocations, incidentLocations }) 
         {activeLayer === 'policies' && (
           <GeoJSON
             key="policy-choropleth"
+            key={policyStates ? policyStates.length : 0}
             data={usStatesGeo}
             style={(feature) => {
-              const code = feature.properties.STUSPS;
+              const code = STATE_NAME_TO_CODE[feature.properties.name];
               const data = policyMap[code];
               const count = data?.count || 0;
               const status = data?.status || null;
@@ -198,8 +215,8 @@ function DashboardMap({ policyStates, deploymentLocations, incidentLocations }) 
               };
             }}
             onEachFeature={(feature, layer) => {
-              const code = feature.properties.STUSPS;
-              const name = feature.properties.NAME;
+              const code = STATE_NAME_TO_CODE[feature.properties.name];
+              const name = feature.properties.name;
               const data = policyMap[code];
               const count = data?.count || 0;
               const status = data?.status || 'No policy';
